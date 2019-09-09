@@ -5,11 +5,22 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
 func main() {
+	usr, _ := user.Current()
+	webm_cache_dir := filepath.Join(usr.HomeDir, ".cache/vtube/webm")
+	if err := os.MkdirAll(webm_cache_dir, 0777); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	} else {
+		fmt.Println("[INFO] mkdir", webm_cache_dir)
+	}
+
 	s := strings.Join(os.Args[1:], " ")
 	q := strings.Replace(s, " ", "+", -1)
 	doc, err := goquery.NewDocument(fmt.Sprintf("https://youtube.com/results?search_query=%s", q))
@@ -31,50 +42,36 @@ func main() {
 	id := watchid_list[0]
 	url := fmt.Sprintf("https://www.youtube.com/watch?v=%s", id)
 
-	fmt.Println(url)
-	proc := exec.Command("youtube-dl", "-f", "worstaudio[ext=webm]", "-o", "%(id)s.%(ext)s", url)
-	proc.Start()
+	fmt.Println("[INFO] fetch", url)
 
-	webm := fmt.Sprintf("%s.webm", id)
-	if f, err := os.Stat(webm); os.IsNotExist(err) || f.IsDir() {
-		webm_part := fmt.Sprintf("%s.webm.part", id)
+	webm_path := filepath.Join(webm_cache_dir, fmt.Sprintf("%s.webm", id))
+
+	// $ youtube-dl -f "worstaudio[ext=webm]" -o "%(id)s.%(ext)s" url
+	proc := exec.Command("youtube-dl", "-f", "worstaudio[ext=webm]", "-o", webm_path, url)
+	proc.Start()
+	if f, err := os.Stat(webm_path); os.IsNotExist(err) || f.IsDir() {
+		webmpart_path := filepath.Join(webm_cache_dir, fmt.Sprintf("%s.webm.part", id))
 		for {
-			if f, err := os.Stat(webm_part); os.IsNotExist(err) || f.IsDir() {
+			if f, err := os.Stat(webmpart_path); os.IsNotExist(err) || f.IsDir() {
 				time.Sleep(1 * time.Second)
 			} else {
 				break
 			}
 		}
-		fmt.Println(webm_part)
-		MPlayer(webm_part)
+		MPlayer(webmpart_path)
 	} else {
-		fmt.Println(webm)
-		MPlayer(webm)
+		MPlayer(webm_path)
 	}
 
 	proc.Wait()
 }
 
 func MPlayer(fpath string) {
+	fmt.Println("[INFO] play", fpath)
 	out, err := exec.Command("mplayer", "-noconsolecontrols", "-really-quiet", fpath).Output()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	fmt.Println(string(out))
-}
-
-func YoutubeDL(id string) {
-	url := fmt.Sprintf("https://www.youtube.com/watch?v=%s", id)
-
-	fmt.Println(url)
-	proc := exec.Command("youtube-dl", "-f", "worstaudio[ext=webm]", "-o", "%(id)s.%(ext)s", url)
-	proc.Run()
-
-	// out, err := exec.Command("youtube-dl", "-f", "worstaudio[ext=webm]", "-o", "%(id)s.%(ext)s", url).Output()
-	// if err != nil {
-	//     fmt.Println(err)
-	//     os.Exit(1)
-	// }
-	// fmt.Println(string(out))
 }
