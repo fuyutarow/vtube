@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	// "time"
+	"time"
 )
 
 func main() {
@@ -38,6 +38,13 @@ func main() {
 	webm := fmt.Sprintf("%s.webm", id)
 	if f, err := os.Stat(webm); os.IsNotExist(err) || f.IsDir() {
 		webm_part := fmt.Sprintf("%s.webm.part", id)
+		for {
+			if f, err := os.Stat(webm_part); os.IsNotExist(err) || f.IsDir() {
+				time.Sleep(1 * time.Second)
+			} else {
+				break
+			}
+		}
 		fmt.Println(webm_part)
 		MPlayer(webm_part)
 	} else {
