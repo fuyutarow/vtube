@@ -1,9 +1,9 @@
 
 build:
-	go build -o vtube play.go
+	go build -o bin/vtube src/play.go
 
 install:
-	mv vtube /usr/local/bin
+	mv bin/vtube /usr/local/bin
 
 uninstall:
 	rm /usr/local/bin/vtube
