@@ -1,0 +1,3 @@
+[submodule "homebrew-vtube"]
+	path = homebrew-vtube
+	url = https://github.com/fuyutarow/homebrew-vtube
