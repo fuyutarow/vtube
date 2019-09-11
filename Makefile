@@ -3,7 +3,7 @@ build:
 	go build -o bin/vtube src/play.go
 
 install:
-	mv bin/vtube /usr/local/bin
+	cp bin/vtube /usr/local/bin
 
 uninstall:
 	rm /usr/local/bin/vtube
