@@ -19,6 +19,7 @@ func main() {
 	rootCmd.AddCommand(
 		&cobra.Command{
 			Use:     "play",
+			Short:   "Plays a song with the given name or url",
 			Aliases: []string{"p"},
 			Run:     PlayCmd,
 		})
@@ -34,6 +35,7 @@ func main() {
 		&cobra.Command{
 			Use:     "resume",
 			Aliases: []string{"re"},
+			Short:   "Resume paused music",
 			Run: func(cmd *cobra.Command, args []string) {
 				pid := GetMPlayerPID()
 				SendSig("CONT", pid)
@@ -42,7 +44,8 @@ func main() {
 
 	rootCmd.AddCommand(
 		&cobra.Command{
-			Use: "pause",
+			Use:   "pause",
+			Short: "Pauses the currently playing track",
 			Run: func(cmd *cobra.Command, args []string) {
 				pid := GetMPlayerPID()
 				SendSig("STOP", pid)
@@ -53,6 +56,7 @@ func main() {
 		&cobra.Command{
 			Use:     "skip",
 			Aliases: []string{"s"},
+			Short:   "Skips the currently playing song",
 			Run: func(cmd *cobra.Command, args []string) {
 				pid := GetMPlayerPID()
 				SendSig("KILL", pid)
@@ -169,7 +173,7 @@ func MPlayer(fpath string) {
 	defer file.Close()
 
 	output := fmt.Sprintf("%d", cmd.Process.Pid)
-	fmt.Println("pid: ", output)
+	fmt.Println("[INFO] pid:", output)
 	file.Write(([]byte)(output))
 }
 
