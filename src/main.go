@@ -16,26 +16,53 @@ import (
 func main() {
 	rootCmd := &cobra.Command{Use: "vtube"}
 
-	playCmd := &cobra.Command{
-		Use:     "play",
-		Aliases: []string{"p"},
-		Short:   "play",
-		Run:     PlayCmd,
-	}
-	rootCmd.AddCommand(playCmd)
+	rootCmd.AddCommand(
+		&cobra.Command{
+			Use:     "play",
+			Aliases: []string{"p"},
+			Run:     PlayCmd,
+		})
 
-	statusCmd := &cobra.Command{
-		Use:     "status",
-		Aliases: []string{"s"},
-		Short:   "Show status",
-		Run:     StatusCmd,
-	}
-	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(
+		&cobra.Command{
+			Use:   "status",
+			Short: "Show status",
+			Run:   StatusCmd,
+		})
+
+	rootCmd.AddCommand(
+		&cobra.Command{
+			Use:     "resume",
+			Aliases: []string{"re"},
+			Run: func(cmd *cobra.Command, args []string) {
+				pid := GetMPlayerPID()
+				SendSig("CONT", pid)
+			},
+		})
+
+	rootCmd.AddCommand(
+		&cobra.Command{
+			Use: "pause",
+			Run: func(cmd *cobra.Command, args []string) {
+				pid := GetMPlayerPID()
+				SendSig("STOP", pid)
+			},
+		})
+
+	rootCmd.AddCommand(
+		&cobra.Command{
+			Use:     "skip",
+			Aliases: []string{"s"},
+			Run: func(cmd *cobra.Command, args []string) {
+				pid := GetMPlayerPID()
+				SendSig("KILL", pid)
+			},
+		})
 
 	rootCmd.Execute()
 }
 
-func StatusCmd(cmd *cobra.Command, args []string) {
+func GetMPlayerPID() string {
 	usr, _ := user.Current()
 	pid_fpath := filepath.Join(usr.HomeDir, ".cache/vtube/mplayer.pid")
 
@@ -51,7 +78,25 @@ func StatusCmd(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	println("pid: ", string(b))
+	return string(b)
+}
+
+func SendSig(signal, pid string) {
+	cmd := exec.Command("kill", fmt.Sprintf("-%s", signal), pid)
+
+	out, err := cmd.Output()
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Println(string(out))
+}
+
+func StatusCmd(cmd *cobra.Command, args []string) {
+	pid := GetMPlayerPID()
+	println("pid: ", pid)
 }
 
 func PlayCmd(cmd *cobra.Command, args []string) {
