@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/spf13/cobra"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -12,6 +14,47 @@ import (
 )
 
 func main() {
+	rootCmd := &cobra.Command{Use: "vtube"}
+
+	playCmd := &cobra.Command{
+		Use:     "play",
+		Aliases: []string{"p"},
+		Short:   "play",
+		Run:     PlayCmd,
+	}
+	rootCmd.AddCommand(playCmd)
+
+	statusCmd := &cobra.Command{
+		Use:     "status",
+		Aliases: []string{"s"},
+		Short:   "Show status",
+		Run:     StatusCmd,
+	}
+	rootCmd.AddCommand(statusCmd)
+
+	rootCmd.Execute()
+}
+
+func StatusCmd(cmd *cobra.Command, args []string) {
+	usr, _ := user.Current()
+	pid_fpath := filepath.Join(usr.HomeDir, ".cache/vtube/mplayer.pid")
+
+	file, err := os.Open(pid_fpath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	b, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	println("pid: ", string(b))
+}
+
+func PlayCmd(cmd *cobra.Command, args []string) {
 	// get webm_cache_dir
 	usr, _ := user.Current()
 	webm_cache_dir := filepath.Join(usr.HomeDir, ".cache/vtube/webm")
@@ -20,7 +63,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	s := strings.Join(os.Args[1:], " ")
+	s := strings.Join(args, " ")
 	search_query := strings.Replace(s, " ", "+", -1)
 	watchid_list := WatchidListByQuery(search_query)
 
@@ -80,8 +123,8 @@ func MPlayer(fpath string) {
 	}
 	defer file.Close()
 
-	output := fmt.Sprintf("pid: %d", cmd.Process.Pid)
-	fmt.Println(output)
+	output := fmt.Sprintf("%d", cmd.Process.Pid)
+	fmt.Println("pid: ", output)
 	file.Write(([]byte)(output))
 }
 

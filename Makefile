@@ -1,6 +1,6 @@
 
 build:
-	go build -o bin/vtube src/play.go
+	go build -o bin/vtube src/main.go
 
 install:
 	cp bin/vtube /usr/local/bin
