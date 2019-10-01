@@ -63,6 +63,13 @@ func main() {
 			},
 		})
 
+	rootCmd.AddCommand(
+		&cobra.Command{
+			Use:   "ui",
+			Short: "Open GUI",
+			Run:   UiCmd,
+		})
+
 	rootCmd.Execute()
 }
 
@@ -103,6 +110,48 @@ func StatusCmd(cmd *cobra.Command, args []string) {
 	println("pid: ", pid)
 }
 
+func GetPlayingPath() string {
+	usr, _ := user.Current()
+	pid_fpath := filepath.Join(usr.HomeDir, ".cache/vtube/playing")
+
+	file, err := os.Open(pid_fpath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	b, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return string(b)
+}
+
+func RunUI() {
+	webm_path := GetPlayingPath()
+	if _, err := exec.Command("open", webm_path).Output(); err != nil {
+	} else {
+		fmt.Println(webm_path)
+		os.Exit(0)
+	}
+
+	webmpart_path := strings.TrimRight(webm_path, ".part")
+	if _, err := exec.Command("open", webmpart_path).Output(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	} else {
+		fmt.Println(webmpart_path)
+		os.Exit(0)
+	}
+
+}
+
+func UiCmd(cmd *cobra.Command, args []string) {
+	RunUI()
+}
+
 func PlayCmd(cmd *cobra.Command, args []string) {
 	// get webm_cache_dir
 	usr, _ := user.Current()
@@ -120,7 +169,7 @@ func PlayCmd(cmd *cobra.Command, args []string) {
 	id := watchid_list[0]
 	url := fmt.Sprintf("https://www.youtube.com/watch?v=%s", id)
 
-	webm_path := filepath.Join(webm_cache_dir, fmt.Sprintf("%s.webm", id))
+	var webm_path = filepath.Join(webm_cache_dir, fmt.Sprintf("%s.webm", id))
 
 	YoutubeDL(webm_path, url).Start()
 
@@ -133,10 +182,21 @@ func PlayCmd(cmd *cobra.Command, args []string) {
 				break
 			}
 		}
-		MPlayer(webmpart_path)
-	} else {
-		MPlayer(webm_path)
+		webm_path = webmpart_path
 	}
+	MPlayer(webm_path)
+
+	fpath := filepath.Join(usr.HomeDir, ".cache/vtube/playing")
+	file, err := os.Create(fpath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	output := webm_path
+	fmt.Println("[INFO] pid:", output)
+	file.Write(([]byte)(output))
 }
 
 func WatchidListByQuery(query string) []string {
